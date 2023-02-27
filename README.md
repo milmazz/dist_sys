@@ -2,6 +2,13 @@
 
 **TODO: Add description**
 
+## Demos
+
+To run the demos you can do the following.
+
+* `echo` - `/maelstrom test -w echo --bin ~/dist_sys/dist_sys echo --node-count 1 --time-limit 10`
+* `unique_ids` - `./maelstrom test -w unique-ids --bin ~/dist_sys/dist_sys unique_ids --time-limit 30 --rate 1000 --node-count 3 --availability total --nemesis partition`
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed

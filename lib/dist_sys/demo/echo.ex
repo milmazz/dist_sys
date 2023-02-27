@@ -1,4 +1,12 @@
 defmodule DistSys.Demo.Echo do
+  @moduledoc """
+  A simple echo server
+
+  This is the first challenge from the Gossip Glomers series.
+
+  See: https://fly.io/dist-sys/1/
+  """
+
   alias DistSys.Node
 
   def run do
