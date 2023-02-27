@@ -14,10 +14,27 @@ defmodule DistSys.Demo.UniqueIds do
     Node.loop()
   end
 
-  def generate(%{"body" => %{"type" => "generate"}} = msg) do
+  # NOTES
+  #
+  # * `System.unique_integer/1` will not work because we run multiple nodes and
+  # it will generate duplicate numbers. Unless we split that integer per client
+  # (`c1`, `c2`, etc.).
+  #
+  # * If we consider to split the counters per client, we can use `ETS` too, by something like:
+  #
+  # ```
+  # :ets.new(@table, [:set, :named_table, :public, read_concurrency: true, write_concurrency: true])
+  # counter = :ets.update_counter(@table, src, {2, 1}, {src, 0})
+  # ```
+  #
+  # * another option that seems to satisfy `maelstrom` is returning:
+  # `[System.system_time(:nanosecond), System.unique_integer([:monotonic])]`
+  #
+  # TODO: Revisit this because seems like cheating.
+  def generate(%{"body" => %{"type" => "generate"}, "src" => src} = msg) do
     Node.reply(msg, %{
       "type" => "generate_ok",
-      "id" => [System.system_time(:nanosecond), System.unique_integer([:monotonic])]
+      "id" => "#{src}-#{inspect(System.system_time(:nanosecond))}"
     })
   end
 end
