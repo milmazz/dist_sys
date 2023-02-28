@@ -18,6 +18,12 @@ To run the demos you can do the following.
 ./maelstrom test -w unique-ids --bin ~/dist_sys/dist_sys unique_ids --time-limit 30 --rate 1000 --node-count 3 --availability total --nemesis partition
 ```
 
+* `broadcast`
+
+```console
+./maelstrom test -w broadcast --bin ~/dist_sys/dist_sys broadcast --node-count 1 --time-limit 20 --rate 10
+```
+
 ## Documentation
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)

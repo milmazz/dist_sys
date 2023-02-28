@@ -1,7 +1,8 @@
 defmodule DistSys.CLI do
   @demos %{
     "echo" => DistSys.Demo.Echo,
-    "unique_ids" => DistSys.Demo.UniqueIds
+    "unique_ids" => DistSys.Demo.UniqueIds,
+    "broadcast" => DistSys.Demo.SingleNodeBroadcast
   }
   @demo_keys Map.keys(@demos)
 
