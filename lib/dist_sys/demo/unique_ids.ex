@@ -9,31 +9,28 @@ defmodule DistSys.Demo.UniqueIds do
 
   alias DistSys.Node
 
+  @table :unique_ids
+
   def run do
+    :ets.new(@table, [
+      :set,
+      :named_table,
+      :public,
+      read_concurrency: true,
+      write_concurrency: true
+    ])
+
     Node.new(handlers: %{"generate" => &__MODULE__.generate/1})
   end
 
-  # NOTES
-  #
-  # * `System.unique_integer/1` will not work because we run multiple nodes and
-  # it will generate duplicate numbers. Unless we split that integer per client
-  # (`c1`, `c2`, etc.).
-  #
-  # * If we consider to split the counters per client, we can use `ETS` too, by something like:
-  #
-  # ```
-  # :ets.new(@table, [:set, :named_table, :public, read_concurrency: true, write_concurrency: true])
-  # counter = :ets.update_counter(@table, src, {2, 1}, {src, 0})
-  # ```
-  #
-  # * another option that seems to satisfy `maelstrom` is returning:
-  # `[System.system_time(:nanosecond), System.unique_integer([:monotonic])]`
-  #
-  # TODO: Revisit this because seems like cheating.
-  def generate(%{"body" => %{"type" => "generate"}, "src" => src} = msg) do
+  # TODO: Calculate some confidence about this approach
+  def generate(%{"body" => %{"type" => "generate"}, "src" => src, "dest" => dest} = msg) do
+    counter = :ets.update_counter(@table, src, {2, 1}, {src, 0})
+    scheduler_id = :erlang.system_info(:scheduler_id)
+
     Node.reply(msg, %{
       "type" => "generate_ok",
-      "id" => "#{src}-#{inspect(System.system_time(:nanosecond))}"
+      "id" => "#{dest}-#{src}-#{scheduler_id}-#{counter}"
     })
   end
 end
