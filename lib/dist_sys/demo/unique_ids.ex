@@ -10,8 +10,7 @@ defmodule DistSys.Demo.UniqueIds do
   alias DistSys.Node
 
   def run do
-    Node.start_link(handlers: %{"generate" => &__MODULE__.generate/1})
-    Node.loop()
+    Node.new(handlers: %{"generate" => &__MODULE__.generate/1})
   end
 
   # NOTES

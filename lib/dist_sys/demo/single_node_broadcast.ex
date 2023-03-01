@@ -20,15 +20,13 @@ defmodule DistSys.Demo.SingleNodeBroadcast do
       write_concurrency: true
     ])
 
-    Node.start_link(
+    Node.new(
       handlers: %{
         "broadcast" => &__MODULE__.broadcast/1,
         "read" => &__MODULE__.read/1,
         "topology" => &__MODULE__.topology/1
       }
     )
-
-    Node.loop()
   end
 
   def broadcast(%{"body" => %{"type" => "broadcast"} = body, "src" => src} = msg) do

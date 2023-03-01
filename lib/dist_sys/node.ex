@@ -11,11 +11,13 @@ defmodule DistSys.Node do
   * `node_id` - the local node ID
   * `node_ids` - all the nodes in the cluster
   * `next_msg_id` - the next message id we will emit
+  * `handlers` - list of hanlders supported by this server
   """
   @type t :: %__MODULE__{
           node_id: String.t(),
           node_ids: [String.t()],
-          next_msg_id: non_neg_integer()
+          next_msg_id: non_neg_integer(),
+          handlers: map()
         }
 
   defstruct [
@@ -26,48 +28,55 @@ defmodule DistSys.Node do
   ]
 
   ## Client API
+  @doc """
+  Starts a new node
+  """
+  def new(opts) do
+    start_link(opts)
+    loop()
+  end
+
   def start_link(opts) do
     custom_handlers = Keyword.fetch!(opts, :handlers)
 
     Agent.start_link(fn -> %{%__MODULE__{} | handlers: custom_handlers} end, name: __MODULE__)
   end
 
+  @doc """
+  Retrieves the node ID
+  """
   def node_id, do: Agent.get(__MODULE__, & &1.node_id)
 
+  @doc """
+  Sets the given node ID
+
+  This is usually done after the `init` message type
+  """
   def node_id(node_id), do: Agent.update(__MODULE__, &%{&1 | node_id: node_id})
 
+  @doc """
+  Retrieves the IDs of the nodes in the cluster
+  """
   def node_ids, do: Agent.get(__MODULE__, & &1.node_ids)
 
+  @doc """
+  Set the list of node IDs in the cluster
+  """
   def node_ids(node_ids), do: Agent.update(__MODULE__, &%{&1 | node_ids: node_ids})
 
+  @doc """
+  Retrieves the next message id
+
+  This counter is usually needed when we reply a message
+  """
   def next_msg_id,
     do:
       Agent.get_and_update(__MODULE__, &{&1.next_msg_id, %{&1 | next_msg_id: &1.next_msg_id + 1}})
 
+  @doc """
+  Retrieves the list of handlers for this node
+  """
   def handlers, do: Agent.get(__MODULE__, & &1.handlers)
-
-  def loop() do
-    msg = IO.binread(:stdio, :line)
-    IO.warn("Read: #{inspect(msg)}")
-
-    msg = Jason.decode!(msg)
-    msg_type = get_in(msg, ["body", "type"])
-    handlers = handlers()
-
-    cond do
-      msg_type == "init" ->
-        prepare(msg)
-
-      Map.has_key?(handlers, msg_type) ->
-        handler = Map.get(handlers, msg_type)
-        handler.(msg)
-
-      true ->
-        :todo_error
-    end
-
-    loop()
-  end
 
   @doc """
   Sends the given body to `dest` 
@@ -97,6 +106,29 @@ defmodule DistSys.Node do
   end
 
   ## Helpers
+  defp loop() do
+    msg = IO.binread(:stdio, :line)
+    IO.warn("Read: #{inspect(msg)}")
+
+    msg = Jason.decode!(msg)
+    msg_type = get_in(msg, ["body", "type"])
+    handlers = handlers()
+
+    cond do
+      msg_type == "init" ->
+        prepare(msg)
+
+      Map.has_key?(handlers, msg_type) ->
+        handler = Map.get(handlers, msg_type)
+        handler.(msg)
+
+      true ->
+        :todo_error
+    end
+
+    loop()
+  end
+
   defp prepare(%{"body" => %{"type" => "init"} = body} = msg) do
     %{"node_id" => node_id, "node_ids" => node_ids} = body
 
